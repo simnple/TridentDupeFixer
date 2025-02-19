@@ -1,0 +1,7 @@
+name: TridentDupeFixer
+version: '1'
+main: xyz.simnple.TridentDupeFixer.TridentDupeFixer
+api-version: '1.21'
+authors: [ Simnple ]
+description: trident dupe fixer
+depend: [ ProtocolLib ]
