@@ -4,6 +4,7 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.wrappers.EnumWrappers.Hand;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Trident;
@@ -22,6 +23,7 @@ import java.util.UUID;
 
 public final class TridentDupeFixer extends JavaPlugin implements Listener {
     private final Set<UUID> readyThrow = new HashSet<>();
+    private final Set<UUID> digCancel = new HashSet<>();
 
     @Override
     public void onEnable() {
@@ -42,9 +44,18 @@ public final class TridentDupeFixer extends JavaPlugin implements Listener {
                 PacketType type = event.getPacketType();
 
                 if (type == PacketType.Play.Client.USE_ITEM) {
-                    ItemStack item = player.getInventory().getItemInMainHand();
+                    Hand handType = event.getPacket().getHands().read(0);
+                    ItemStack item;
+
+                    if (handType == Hand.MAIN_HAND) {
+                        item = player.getInventory().getItemInMainHand();
+                    } else {
+                        item = player.getInventory().getItemInOffHand();
+                    }
+
                     if (item.getType() == Material.TRIDENT) {
                         readyThrow.add(player.getUniqueId());
+                        digCancel.remove(player.getUniqueId());
                     }
                 }
 
@@ -53,6 +64,10 @@ public final class TridentDupeFixer extends JavaPlugin implements Listener {
                         event.setCancelled(true);
                     } else if (type == PacketType.Play.Client.HELD_ITEM_SLOT || type == PacketType.Play.Client.BLOCK_DIG) {
                         readyThrow.remove(player.getUniqueId());
+
+                        if (type == PacketType.Play.Client.BLOCK_DIG) {
+                            digCancel.add(player.getUniqueId());
+                        }
                     }
                 }
             }
@@ -63,6 +78,10 @@ public final class TridentDupeFixer extends JavaPlugin implements Listener {
     public void onProjectileLaunch(ProjectileLaunchEvent event) {
         if (event.getEntity() instanceof Trident) {
             if (event.getEntity().getShooter() instanceof Player player) {
+                if (!digCancel.contains(player.getUniqueId())) {
+                    event.setCancelled(true);
+                }
+                digCancel.remove(player.getUniqueId());
                 readyThrow.remove(player.getUniqueId());
             }
         }
@@ -70,6 +89,7 @@ public final class TridentDupeFixer extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
+        digCancel.remove(event.getPlayer().getUniqueId());
         readyThrow.remove(event.getPlayer().getUniqueId());
     }
 }
