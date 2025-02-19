@@ -1,7 +1,7 @@
 # TridentDupeFixer
 
 `TridentDupeFixer` is a Minecraft plugin that fixes [trident dupe exploit](https://github.com/Killetx/TridentDupe).  
-**Currently only tested with Minecraft version 1.21.1**
+**Only tested with MC 1.21.1**
 
 ## Installation
 
